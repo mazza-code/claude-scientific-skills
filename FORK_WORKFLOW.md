@@ -21,6 +21,20 @@ python /Users/mazza/.codex/skills/.system/skill-installer/scripts/install-skill-
 
 ## Update cycle when upstream changes
 
+Run one command for sync + rebase + tests:
+
+```bash
+scripts/maintain_fork.sh --push
+```
+
+With a new pinned tag in the same run:
+
+```bash
+scripts/maintain_fork.sh --push --tag mazza-skills-fixes-YYYY-MM-DD
+```
+
+Manual equivalent:
+
 1. Sync `main` with upstream:
 ```bash
 git checkout main
@@ -52,4 +66,3 @@ git push origin mazza-skills-fixes-YYYY-MM-DD
 ## Optional upstream contribution
 
 Open PRs from your branch to `K-Dense-AI/claude-scientific-skills` for fixes that should be upstreamed.
-
