@@ -148,10 +148,13 @@ def _detect_venue_tier(url: str) -> Optional[str]:
 
 def main():
     """Main entry point for Claude Code tool."""
-    # Check for API key
-    if not os.getenv("OPENROUTER_API_KEY"):
-        print("❌ Error: OPENROUTER_API_KEY environment variable not set")
-        print("Please set it in your .env file or export it:")
+    # Check for API keys (at least one backend must be available)
+    has_parallel = bool(os.getenv("PARALLEL_API_KEY"))
+    has_openrouter = bool(os.getenv("OPENROUTER_API_KEY"))
+    if not has_parallel and not has_openrouter:
+        print("❌ Error: No API key found for research backends")
+        print("Set at least one:")
+        print("  export PARALLEL_API_KEY='your_parallel_api_key'")
         print("  export OPENROUTER_API_KEY='your_openrouter_api_key'")
         return 1
 

@@ -19,6 +19,7 @@ import time
 import requests
 from datetime import datetime
 from typing import Any, Dict, List, Optional
+from safe_output import SafeOutputError, safe_write_json, safe_write_text
 
 
 class ResearchLookup:
@@ -454,11 +455,14 @@ Examples:
   python research_lookup.py "topic" --force-backend parallel
   python research_lookup.py "topic" --force-backend perplexity
 
-  # Save output to file
-  python research_lookup.py "topic" -o results.txt
+  # Save output to file (safe root defaults to sources/)
+  python research_lookup.py "topic" -o sources/results.txt
 
   # JSON output
-  python research_lookup.py "topic" --json -o results.json
+  python research_lookup.py "topic" --json -o sources/results.json
+
+  # Allow output outside safe root
+  python research_lookup.py "topic" -o /tmp/results.txt --allow-output-outside-root
         """,
     )
     parser.add_argument("query", nargs="?", help="Research query to look up")
@@ -470,18 +474,54 @@ Examples:
     )
     parser.add_argument("-o", "--output", help="Write output to file")
     parser.add_argument("--json", action="store_true", help="Output as JSON")
+    parser.add_argument(
+        "--safe-output",
+        choices=["off", "standard", "strict"],
+        default="standard",
+        help="Safe output mode for file writes (default: standard)",
+    )
+    parser.add_argument(
+        "--safe-root",
+        default="sources",
+        help="Allowed root directory for output files (default: sources)",
+    )
+    parser.add_argument(
+        "--allow-output-outside-root",
+        action="store_true",
+        help="Allow writing outside --safe-root",
+    )
 
     args = parser.parse_args()
 
-    output_file = None
-    if args.output:
-        output_file = open(args.output, "w", encoding="utf-8")
+    output_buffer: Optional[List[str]] = [] if args.output else None
 
     def write_output(text):
-        if output_file:
-            output_file.write(text + "\n")
+        if output_buffer is not None:
+            output_buffer.append(text)
         else:
             print(text)
+
+    def flush_output_buffer() -> int:
+        if output_buffer is None:
+            return 0
+
+        payload = "\n".join(output_buffer).rstrip("\n") + "\n"
+        try:
+            meta = safe_write_text(
+                args.output,
+                payload,
+                mode=args.safe_output,
+                allowed_root=args.safe_root,
+                allow_outside=args.allow_output_outside_root,
+            )
+            print(
+                f"[SafeOutput] wrote {meta['path']} (redactions: {meta['redactions']})",
+                file=sys.stderr,
+            )
+            return 0
+        except SafeOutputError as err:
+            print(f"Error: {err}", file=sys.stderr)
+            return 1
 
     has_parallel = bool(os.getenv("PARALLEL_API_KEY"))
     has_perplexity = bool(os.getenv("OPENROUTER_API_KEY"))
@@ -489,14 +529,10 @@ Examples:
         print("Error: No API keys found. Set at least one:", file=sys.stderr)
         print("  export PARALLEL_API_KEY='...'    (primary - Parallel Chat API)", file=sys.stderr)
         print("  export OPENROUTER_API_KEY='...'   (fallback - Perplexity academic)", file=sys.stderr)
-        if output_file:
-            output_file.close()
         return 1
 
     if not args.query and not args.batch:
         parser.print_help()
-        if output_file:
-            output_file.close()
         return 1
 
     try:
@@ -510,9 +546,24 @@ Examples:
             results = [research.lookup(args.query)]
 
         if args.json:
-            write_output(json.dumps(results, indent=2, ensure_ascii=False, default=str))
-            if output_file:
-                output_file.close()
+            if args.output:
+                try:
+                    meta = safe_write_json(
+                        args.output,
+                        results,
+                        mode=args.safe_output,
+                        allowed_root=args.safe_root,
+                        allow_outside=args.allow_output_outside_root,
+                    )
+                    print(
+                        f"[SafeOutput] wrote {meta['path']} (redactions: {meta['redactions']})",
+                        file=sys.stderr,
+                    )
+                except SafeOutputError as err:
+                    print(f"Error: {err}", file=sys.stderr)
+                    return 1
+            else:
+                write_output(json.dumps(results, indent=2, ensure_ascii=False, default=str))
             return 0
 
         for i, result in enumerate(results):
@@ -551,14 +602,11 @@ Examples:
             else:
                 write_output(f"\nError in query {i+1}: {result['error']}")
 
-        if output_file:
-            output_file.close()
-        return 0
+        flush_status = flush_output_buffer()
+        return 0 if flush_status == 0 else flush_status
 
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
-        if output_file:
-            output_file.close()
         return 1
 
 

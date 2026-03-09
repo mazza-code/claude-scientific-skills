@@ -13,6 +13,7 @@ import json
 import time
 import random
 from typing import List, Dict, Optional
+from safe_output import SafeOutputError, safe_write_text
 
 try:
     from scholarly import scholarly, ProxyGenerator
@@ -36,11 +37,16 @@ class GoogleScholarSearcher:
         
         # Setup proxy if requested
         if use_proxy:
+            print(
+                'Warning: --use-proxy enables free third-party proxies. '
+                'Do not use this mode for confidential queries or unpublished work.',
+                file=sys.stderr
+            )
             try:
                 pg = ProxyGenerator()
                 pg.FreeProxies()
                 scholarly.use_proxy(pg)
-                print('Using free proxy', file=sys.stderr)
+                print('Using free proxy (insecure mode)', file=sys.stderr)
             except Exception as e:
                 print(f'Warning: Could not setup proxy: {e}', file=sys.stderr)
     
@@ -224,6 +230,25 @@ def main():
         '-o', '--output',
         help='Output file (default: stdout)'
     )
+
+    parser.add_argument(
+        '--safe-output',
+        choices=['off', 'standard', 'strict'],
+        default='standard',
+        help='Safe output mode for file writes (default: standard)'
+    )
+
+    parser.add_argument(
+        '--safe-root',
+        default=None,
+        help='Optional allowed root directory for output files'
+    )
+
+    parser.add_argument(
+        '--allow-output-outside-root',
+        action='store_true',
+        help='Allow writing outside --safe-root'
+    )
     
     parser.add_argument(
         '--format',
@@ -268,9 +293,21 @@ def main():
     
     # Write output
     if args.output:
-        with open(args.output, 'w', encoding='utf-8') as f:
-            f.write(output)
-        print(f'Wrote {len(results)} results to {args.output}', file=sys.stderr)
+        try:
+            meta = safe_write_text(
+                args.output,
+                output,
+                mode=args.safe_output,
+                allowed_root=args.safe_root,
+                allow_outside=args.allow_output_outside_root
+            )
+            print(
+                f"Wrote {len(results)} results to {meta['path']} (redactions: {meta['redactions']})",
+                file=sys.stderr
+            )
+        except SafeOutputError as e:
+            print(f'Error: {e}', file=sys.stderr)
+            sys.exit(1)
     else:
         print(output)
     
@@ -279,4 +316,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

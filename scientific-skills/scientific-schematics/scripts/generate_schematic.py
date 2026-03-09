@@ -84,6 +84,28 @@ Environment Variables:
                        help="Maximum refinement iterations (default: 2, max: 2)")
     parser.add_argument("--api-key", 
                        help="OpenRouter API key (or use OPENROUTER_API_KEY env var)")
+    parser.add_argument(
+        "--safe-output",
+        choices=["off", "standard", "strict"],
+        default="standard",
+        help="Safe output mode for logs and output paths (default: standard)",
+    )
+    parser.add_argument(
+        "--safe-root",
+        default=".",
+        help="Allowed root directory for outputs (default: current directory)",
+    )
+    parser.add_argument(
+        "--allow-output-outside-root",
+        action="store_true",
+        help="Allow output paths outside --safe-root",
+    )
+    parser.add_argument(
+        "--log-detail",
+        choices=["summary", "full"],
+        default="summary",
+        help="Amount of detail persisted in review logs (default: summary)",
+    )
     parser.add_argument("-v", "--verbose", action="store_true",
                        help="Verbose output")
     
@@ -118,16 +140,20 @@ Environment Variables:
     iterations = min(args.iterations, 2)
     if iterations != 2:
         cmd.extend(["--iterations", str(iterations)])
-    
-    if api_key:
-        cmd.extend(["--api-key", api_key])
+
+    cmd.extend(["--safe-output", args.safe_output, "--safe-root", args.safe_root, "--log-detail", args.log_detail])
+    if args.allow_output_outside_root:
+        cmd.append("--allow-output-outside-root")
     
     if args.verbose:
         cmd.append("-v")
     
     # Execute
     try:
-        result = subprocess.run(cmd, check=False)
+        child_env = os.environ.copy()
+        if args.api_key:
+            child_env["OPENROUTER_API_KEY"] = args.api_key
+        result = subprocess.run(cmd, check=False, env=child_env)
         sys.exit(result.returncode)
     except Exception as e:
         print(f"Error executing AI generation: {e}")
@@ -136,4 +162,3 @@ Environment Variables:
 
 if __name__ == "__main__":
     main()
-

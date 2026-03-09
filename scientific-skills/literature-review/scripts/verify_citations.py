@@ -10,6 +10,7 @@ import json
 from typing import Dict, List, Tuple
 from urllib.parse import urlparse
 import time
+from safe_output import SafeOutputError, safe_write_json
 
 class CitationVerifier:
     def __init__(self):
@@ -182,12 +183,35 @@ class CitationVerifier:
 def main():
     """Example usage."""
     import sys
+    import argparse
 
-    if len(sys.argv) < 2:
-        print("Usage: python verify_citations.py <markdown_file>")
-        sys.exit(1)
+    parser = argparse.ArgumentParser(
+        description="Verify DOIs in a markdown file and save a JSON report."
+    )
+    parser.add_argument("markdown_file", help="Input markdown file")
+    parser.add_argument(
+        "--report-file",
+        help="Output path for report JSON (default: <markdown>_citation_report.json)"
+    )
+    parser.add_argument(
+        "--safe-output",
+        choices=["off", "standard", "strict"],
+        default="standard",
+        help="Safe output mode for report file writes (default: standard)"
+    )
+    parser.add_argument(
+        "--safe-root",
+        default=None,
+        help="Optional allowed root directory for output files"
+    )
+    parser.add_argument(
+        "--allow-output-outside-root",
+        action="store_true",
+        help="Allow writing outside --safe-root"
+    )
+    args = parser.parse_args()
 
-    filepath = sys.argv[1]
+    filepath = args.markdown_file
     verifier = CitationVerifier()
 
     print(f"Verifying citations in: {filepath}")
@@ -212,11 +236,22 @@ def main():
             print(f"\n{citation}")
 
     # Save detailed report
-    output_file = filepath.replace('.md', '_citation_report.json')
-    with open(output_file, 'w', encoding='utf-8') as f:
-        json.dump(report, f, indent=2)
-
-    print(f"\n\nDetailed report saved to: {output_file}")
+    output_file = args.report_file or filepath.replace('.md', '_citation_report.json')
+    try:
+        meta = safe_write_json(
+            output_file,
+            report,
+            mode=args.safe_output,
+            allowed_root=args.safe_root,
+            allow_outside=args.allow_output_outside_root,
+        )
+        print(
+            f"\n\nDetailed report saved to: {meta['path']} "
+            f"(redactions: {meta['redactions']})"
+        )
+    except SafeOutputError as e:
+        print(f"\n\nError: {e}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

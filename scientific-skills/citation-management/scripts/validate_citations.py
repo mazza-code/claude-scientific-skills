@@ -364,11 +364,12 @@ class CitationValidator:
                         })
         
         all_errors.extend(doi_errors)
-        
+        entries_with_high_errors = {e.get('entry') for e in all_errors if e.get('severity') == 'high' and e.get('entry')}
+
         return {
             'filepath': filepath,
             'total_entries': len(entries),
-            'valid_entries': len(entries) - len([e for e in all_errors if e['severity'] == 'high']),
+            'valid_entries': max(0, len(entries) - len(entries_with_high_errors)),
             'errors': all_errors,
             'warnings': all_warnings,
             'duplicates': duplicates
@@ -494,4 +495,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

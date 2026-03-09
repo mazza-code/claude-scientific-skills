@@ -14,6 +14,7 @@ import json
 import xml.etree.ElementTree as ET
 from typing import Optional, Dict, List, Tuple
 from urllib.parse import urlparse
+from safe_output import SafeOutputError, safe_write_text
 
 class MetadataExtractor:
     """Extract metadata from various sources and generate BibTeX."""
@@ -220,7 +221,7 @@ class MetadataExtractor:
         Returns:
             Metadata dictionary or None
         """
-        url = 'http://export.arxiv.org/api/query'
+        url = 'https://export.arxiv.org/api/query'
         params = {
             'id_list': arxiv_id,
             'max_results': 1
@@ -499,6 +500,22 @@ def main():
     parser.add_argument('-o', '--output', help='Output file for BibTeX (default: stdout)')
     parser.add_argument('--format', choices=['bibtex', 'json'], default='bibtex', help='Output format')
     parser.add_argument('--email', help='Email for NCBI E-utilities (recommended)')
+    parser.add_argument(
+        '--safe-output',
+        choices=['off', 'standard', 'strict'],
+        default='standard',
+        help='Safe output mode for file writes (default: standard)'
+    )
+    parser.add_argument(
+        '--safe-root',
+        default=None,
+        help='Optional allowed root directory for output files'
+    )
+    parser.add_argument(
+        '--allow-output-outside-root',
+        action='store_true',
+        help='Allow writing outside --safe-root'
+    )
     
     args = parser.parse_args()
     
@@ -555,9 +572,22 @@ def main():
     
     # Write output
     if args.output:
-        with open(args.output, 'w', encoding='utf-8') as f:
-            f.write(output)
-        print(f'\nSuccessfully wrote {len(bibtex_entries)} entries to {args.output}', file=sys.stderr)
+        try:
+            meta = safe_write_text(
+                args.output,
+                output,
+                mode=args.safe_output,
+                allowed_root=args.safe_root,
+                allow_outside=args.allow_output_outside_root
+            )
+            print(
+                f"\nSuccessfully wrote {len(bibtex_entries)} entries to {meta['path']} "
+                f"(redactions: {meta['redactions']})",
+                file=sys.stderr
+            )
+        except SafeOutputError as e:
+            print(f'Error: {e}', file=sys.stderr)
+            sys.exit(1)
     else:
         print(output)
     
@@ -566,4 +596,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

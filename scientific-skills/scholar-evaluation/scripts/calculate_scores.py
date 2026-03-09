@@ -106,9 +106,10 @@ def calculate_weighted_average(scores: Dict[str, float], weights: Dict[str, floa
         total_score += score * weight
         total_weight += weight
 
-    # Normalize if not all dimensions were scored
+    # Normalize across the weights that were actually scored.
+    # This keeps partial-dimension input within the same 1-5 scale.
     if total_weight > 0:
-        return total_score / total_weight * (sum(weights.values()) / total_weight)
+        return total_score / total_weight
     return 0.0
 
 

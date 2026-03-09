@@ -13,6 +13,7 @@ import time
 import xml.etree.ElementTree as ET
 from typing import List, Dict, Optional
 from datetime import datetime
+from safe_output import SafeOutputError, safe_write_text
 
 class PubMedSearcher:
     """Search PubMed using NCBI E-utilities API."""
@@ -316,6 +317,25 @@ def main():
         '-o', '--output',
         help='Output file (default: stdout)'
     )
+
+    parser.add_argument(
+        '--safe-output',
+        choices=['off', 'standard', 'strict'],
+        default='standard',
+        help='Safe output mode for file writes (default: standard)'
+    )
+
+    parser.add_argument(
+        '--safe-root',
+        default=None,
+        help='Optional allowed root directory for output files'
+    )
+
+    parser.add_argument(
+        '--allow-output-outside-root',
+        action='store_true',
+        help='Allow writing outside --safe-root'
+    )
     
     parser.add_argument(
         '--format',
@@ -386,13 +406,24 @@ def main():
     
     # Write output
     if args.output:
-        with open(args.output, 'w', encoding='utf-8') as f:
-            f.write(output)
-        print(f'Wrote {len(metadata_list)} results to {args.output}', file=sys.stderr)
+        try:
+            meta = safe_write_text(
+                args.output,
+                output,
+                mode=args.safe_output,
+                allowed_root=args.safe_root,
+                allow_outside=args.allow_output_outside_root
+            )
+            print(
+                f"Wrote {len(metadata_list)} results to {meta['path']} (redactions: {meta['redactions']})",
+                file=sys.stderr
+            )
+        except SafeOutputError as e:
+            print(f'Error: {e}', file=sys.stderr)
+            sys.exit(1)
     else:
         print(output)
 
 
 if __name__ == '__main__':
     main()
-

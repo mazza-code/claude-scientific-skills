@@ -27,6 +27,8 @@ import time
 from pathlib import Path
 from typing import Optional, Dict, Any, List, Tuple
 
+from safe_output import SafeOutputError, resolve_output_path, safe_write_json
+
 try:
     import requests
 except ImportError:
@@ -527,7 +529,7 @@ If score < {threshold}, mark as NEEDS_IMPROVEMENT with specific suggestions."""
             # Extract text response
             choices = response.get("choices", [])
             if not choices:
-                return "Image generated successfully", 8.0
+                return "Image generated successfully", 8.0, False
             
             message = choices[0].get("message", {})
             content = message.get("content", "")
@@ -603,7 +605,11 @@ Generate an improved version that addresses all the critique points while mainta
     
     def generate_iterative(self, user_prompt: str, output_path: str,
                           iterations: int = 2, 
-                          doc_type: str = "default") -> Dict[str, Any]:
+                          doc_type: str = "default",
+                          safe_output_mode: str = "standard",
+                          safe_root: Optional[str] = ".",
+                          allow_output_outside_root: bool = False,
+                          log_detail: str = "summary") -> Dict[str, Any]:
         """
         Generate scientific schematic with smart iterative refinement.
         
@@ -620,7 +626,21 @@ Generate an improved version that addresses all the critique points while mainta
         Returns:
             Dictionary with generation results and metadata
         """
-        output_path = Path(output_path)
+        try:
+            resolved_output = resolve_output_path(
+                str(output_path),
+                allowed_root=safe_root,
+                allow_outside=allow_output_outside_root,
+            )
+        except SafeOutputError as err:
+            return {
+                "final_image": None,
+                "final_score": 0.0,
+                "success": False,
+                "error": str(err),
+            }
+
+        output_path = Path(resolved_output)
         output_dir = output_path.parent
         output_dir.mkdir(parents=True, exist_ok=True)
         
@@ -632,9 +652,9 @@ Generate an improved version that addresses all the critique points while mainta
                                                  self.QUALITY_THRESHOLDS["default"])
         
         results = {
-            "user_prompt": user_prompt,
             "doc_type": doc_type,
             "quality_threshold": threshold,
+            "log_detail": log_detail,
             "iterations": [],
             "final_image": None,
             "final_score": 0.0,
@@ -642,6 +662,14 @@ Generate an improved version that addresses all the critique points while mainta
             "early_stop": False,
             "early_stop_reason": None
         }
+
+        prompt_summary = " ".join(user_prompt.split())
+        if len(prompt_summary) > 200:
+            prompt_summary = prompt_summary[:197] + "..."
+        if log_detail == "full":
+            results["user_prompt"] = user_prompt
+        else:
+            results["user_prompt_summary"] = prompt_summary
         
         current_prompt = f"""{self.SCIENTIFIC_DIAGRAM_GUIDELINES}
 
@@ -694,12 +722,13 @@ Generate a publication-quality scientific diagram that meets all the guidelines 
             iteration_result = {
                 "iteration": i,
                 "image_path": str(iter_path),
-                "prompt": current_prompt,
                 "critique": critique,
                 "score": score,
                 "needs_improvement": needs_improvement,
                 "success": True
             }
+            if log_detail == "full":
+                iteration_result["prompt"] = current_prompt
             results["iterations"].append(iteration_result)
             
             # Check if quality is acceptable - STOP EARLY if so
@@ -736,9 +765,19 @@ Generate a publication-quality scientific diagram that meets all the guidelines 
         
         # Save review log
         log_path = output_dir / f"{base_name}_review_log.json"
-        with open(log_path, "w") as f:
-            json.dump(results, f, indent=2)
-        print(f"✓ Review log: {log_path}")
+        try:
+            write_meta = safe_write_json(
+                str(log_path),
+                results,
+                mode=safe_output_mode,
+                allowed_root=safe_root,
+                allow_outside=allow_output_outside_root,
+            )
+            print(f"✓ Review log: {write_meta['path']} (redactions: {write_meta['redactions']})")
+        except SafeOutputError as err:
+            print(f"✗ Could not write review log safely: {err}")
+            results["success"] = False
+            return results
         
         print(f"\n{'='*60}")
         print(f"Generation Complete!")
@@ -798,6 +837,28 @@ Environment:
                                "report", "grant", "thesis", "preprint", "default"],
                        help="Document type for quality threshold (default: default)")
     parser.add_argument("--api-key", help="OpenRouter API key (or set OPENROUTER_API_KEY)")
+    parser.add_argument(
+        "--safe-output",
+        choices=["off", "standard", "strict"],
+        default="standard",
+        help="Safe output mode for persisted logs (default: standard)",
+    )
+    parser.add_argument(
+        "--safe-root",
+        default=".",
+        help="Allowed root directory for outputs (default: current directory)",
+    )
+    parser.add_argument(
+        "--allow-output-outside-root",
+        action="store_true",
+        help="Allow output paths outside --safe-root",
+    )
+    parser.add_argument(
+        "--log-detail",
+        choices=["summary", "full"],
+        default="summary",
+        help="Detail level persisted in review logs (default: summary)",
+    )
     parser.add_argument("-v", "--verbose", action="store_true",
                        help="Verbose output")
     
@@ -823,7 +884,11 @@ Environment:
             user_prompt=args.prompt,
             output_path=args.output,
             iterations=args.iterations,
-            doc_type=args.doc_type
+            doc_type=args.doc_type,
+            safe_output_mode=args.safe_output,
+            safe_root=args.safe_root,
+            allow_output_outside_root=args.allow_output_outside_root,
+            log_detail=args.log_detail,
         )
         
         if results["success"]:
@@ -841,4 +906,3 @@ Environment:
 
 if __name__ == "__main__":
     main()
-
