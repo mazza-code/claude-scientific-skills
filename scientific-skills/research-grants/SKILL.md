@@ -1,6 +1,6 @@
 ---
 name: research-grants
-description: Write competitive research proposals for NSF, NIH, DOE, DARPA, and Taiwan NSTC. Agency-specific formatting, review criteria, budget preparation, broader impacts, significance statements, innovation narratives, and compliance with submission requirements.
+description: Write competitive research proposals for NSF, NIH, DOE, DARPA, Taiwan NSTC, and Czech GACR. Agency-specific formatting, review criteria, budget preparation, broader impacts/significance statements, innovation narratives, and compliance with submission requirements.
 allowed-tools: Read Write Edit Bash
 license: MIT license
 metadata:
@@ -11,14 +11,14 @@ metadata:
 
 ## Overview
 
-Research grant writing is the process of developing competitive funding proposals for federal agencies and foundations. Master agency-specific requirements, review criteria, narrative structure, budget preparation, and compliance for NSF (National Science Foundation), NIH (National Institutes of Health), DOE (Department of Energy), DARPA (Defense Advanced Research Projects Agency), and Taiwan's NSTC (National Science and Technology Council) submissions.
+Research grant writing is the process of developing competitive funding proposals for federal agencies and foundations. Master agency-specific requirements, review criteria, narrative structure, budget preparation, and compliance for NSF (National Science Foundation), NIH (National Institutes of Health), DOE (Department of Energy), DARPA (Defense Advanced Research Projects Agency), Taiwan's NSTC (National Science and Technology Council), and the Czech Science Foundation GACR (Grantova agentura Ceske republiky) submissions.
 
 **Critical Principle: Grants are persuasive documents that must simultaneously demonstrate scientific rigor, innovation, feasibility, and broader impact.** Each agency has distinct priorities, review criteria, formatting requirements, and strategic goals that must be addressed.
 
 ## When to Use This Skill
 
 This skill should be used when:
-- Writing research proposals for NSF, NIH, DOE, DARPA, or NSTC programs
+- Writing research proposals for NSF, NIH, DOE, DARPA, NSTC, or GACR programs
 - Preparing project descriptions, specific aims, or technical narratives
 - Developing broader impacts or significance statements
 - Creating research timelines and milestone plans
@@ -124,6 +124,25 @@ For detailed guidance on creating schematics, refer to the scientific-schematics
 - **Preliminary Data**: Highly critical for credibility.
 - **Research Architecture Diagram**: A mandatory visual element for clarity.
 
+### GACR (Czech Science Foundation)
+**Mission**: Support high-quality basic research with international-level scientific outputs.
+
+**Key Features**:
+- Fixed proposal architecture (A/B/C1/C2/D1/D2/E) with strict formal compliance requirements.
+- Strong panel-based scientific review with explicit methodological and feasibility scrutiny.
+- Budget/FTE compliance is evaluated separately with hard admissibility implications.
+- High disqualification risk for formal errors (language, limits, completeness, non-permitted annexes).
+- Call-specific profile logic is required (for this repository: `GACR_STD_2027`).
+
+## GACR Call Profile Mode
+
+For Czech proposals, always run this skill in two-layer mode:
+
+1. Agency track: `GACR`
+2. Call profile: specific tender profile (for this repo: `GACR_STD_2027`)
+
+Before drafting narrative text, initialize profile constraints (limits, form rules, dates, and budget caps). Do not finalize any GACR deliverable without a formal compliance gate.
+
 ## Core Components of Research Proposals
 
 ### 1. Executive Summary / Project Summary / Abstract
@@ -137,6 +156,7 @@ Every proposal needs a concise overview that communicates the essential elements
 - NIH: 30 lines (Project Summary/Abstract)
 - DOE: Varies (typically 1 page)
 - DARPA: Varies (often 1-2 pages)
+- GACR STD 2027 profile: Abstract max 1,100 characters and Scientific Aim max 300 characters (Part A)
 
 **Essential Elements**:
 - Clear statement of the problem or research question
@@ -206,8 +226,10 @@ For detailed agency-specific guidance, refer to:
 - `references/doe_guidelines.md`
 - `references/darpa_guidelines.md`
 - `references/nstc_guidelines.md`
+- `references/gacr_guidelines.md`
+- `references/gacr_std_2027_guidelines.md`
 
-### 3. Specific Aims (NIH) or Objectives (NSF/DOE/DARPA)
+### 3. Specific Aims (NIH) or Objectives (NSF/DOE/DARPA/GACR)
 
 Clear, testable goals that structure the research plan.
 
@@ -360,7 +382,7 @@ Detailed description of how the research will be conducted.
 - Address regulatory approvals (IRB, IND, IDE)
 - Describe clinical trial design and monitoring
 
-For detailed methodology guidance by discipline, refer to `references/research_methods.md`.
+For detailed methodology expectations, refer to the agency-specific guideline files in `references/`.
 
 ### 7. Preliminary Data and Feasibility
 
@@ -434,7 +456,7 @@ Demonstrate that the project is well-planned and achievable within the proposed 
 - Phase-based structure with exit criteria
 - Demonstration and transition planning
 
-For detailed guidance, refer to `references/timeline_planning.md`.
+For detailed timeline expectations, refer to the agency-specific guideline files in `references/`.
 
 ### 9. Team Qualifications and Collaboration
 
@@ -470,7 +492,7 @@ Demonstrate that the team has the expertise, experience, and resources to succee
 - Includes resource sharing or access agreements
 - Signed and on letterhead
 
-For detailed guidance, refer to `references/team_building.md`.
+For detailed team/role expectations, refer to the agency-specific guideline files in `references/`.
 
 ### 10. Budget and Budget Justification
 
@@ -519,7 +541,7 @@ Develop realistic budgets that align with the proposed work and agency guideline
 - Explain consultant roles and rates
 - Show how budget aligns with timeline
 
-For detailed budget guidance, refer to `references/budget_preparation.md`.
+For detailed budget guidance, use `assets/budget_justification_template.md` and the agency-specific guideline files in `references/`.
 
 ## Review Criteria by Agency
 
@@ -603,12 +625,20 @@ Varies by program office, but generally includes:
 3. **PI Capability (主持人能力)**: Track record and expertise.
 4. **Value (價值)**: Academic contribution and societal/industrial impact.
 
-For detailed review criteria by agency, refer to `references/review_criteria.md` and `references/nstc_guidelines.md`.
-- **What if you succeed?** (Impact if the research works)
-- **What if you're right?** (Implications of your hypothesis)
-- **Who cares?** (Why it matters for national security)
+### GACR Review Criteria
 
-For detailed review criteria by agency, refer to `references/review_criteria.md`.
+**Core Evaluation Dimensions**:
+1. **Scientific Aim Quality**: Clarity, significance, difficulty, and feasibility of aims.
+2. **Methodological Adequacy**: Conceptual and methodological quality, schedule quality, and fit to hypothesis/questions.
+3. **Team And Readiness**: Team competence, role/workload adequacy, institutional readiness, and infrastructure.
+4. **Expected Results Quality**: Credibility and quality of planned outputs.
+5. **Cost And Workload Appropriateness**: Legitimacy and proportionality of costs relative to aims/results.
+6. **Formal Compliance Risk**: Completeness, correctness, allowed annexes, and call-specific format limits.
+
+For detailed review criteria by agency, refer to:
+- `references/nstc_guidelines.md`
+- `references/gacr_guidelines.md`
+- `references/gacr_std_2027_guidelines.md`
 
 ## Writing Principles for Competitive Proposals
 
@@ -742,7 +772,11 @@ For detailed review criteria by agency, refer to `references/review_criteria.md`
 - **Young Faculty Award (YFA)**: Early career researchers, up to $500K
 - **Director's Fellowship**: High-risk, paradigm-shifting research
 
-For detailed program guidance, refer to `references/funding_mechanisms.md`.
+### GACR Call Profiles
+
+- **Standard Projects 2027 (`GACR_STD_2027`)**: Structured A/B/C1/C2/D1/D2/E package with strict formal-compliance gates, panel-based scientific assessment, and cost/FTE compliance checks.
+
+For detailed program guidance, refer to the agency guideline files listed in the Resources section.
 
 ## Resubmission Strategies
 
@@ -778,7 +812,7 @@ For detailed program guidance, refer to `references/funding_mechanisms.md`.
 - Consider program officer feedback
 - May need to wait for next submission cycle
 
-For detailed resubmission guidance, refer to `references/resubmission_strategies.md`.
+For detailed resubmission guidance, follow the NIH/NSF resubmission sections in this document and their agency references.
 
 ## Common Mistakes to Avoid
 
@@ -823,6 +857,19 @@ For detailed resubmission guidance, refer to `references/resubmission_strategies
 5. **Late Submission**: Technical issues or rushed preparation
 
 ## Workflow for Grant Development
+
+### Phase 0: Call Profile Initialization (Mandatory for GACR)
+
+**Activities**:
+- Identify agency and exact call profile (for Czech calls, initialize `GACR_STD_2027` where applicable).
+- Extract hard constraints (language, page/file limits, budget/FTE caps, allowed annexes, key dates).
+- Build a formal compliance checklist before drafting narrative sections.
+- Define section-by-section deliverable map (A/B/C1/C2/D1/D2/E for GACR).
+
+**Outputs**:
+- Active call profile with explicit constraints
+- Compliance checklist with pass/fail criteria
+- Section drafting plan aligned to call forms
 
 ### Phase 1: Planning and Preparation (2-6 months before deadline)
 
@@ -883,12 +930,14 @@ For detailed resubmission guidance, refer to `references/resubmission_strategies
 - Collect letters of support
 - Prepare data management plan (if required)
 - Write project summary/abstract
+- Run formal compliance/disqualification-risk gate (mandatory for GACR profiles)
 - Proofread all materials
 
 **Outputs**:
 - Complete, polished proposal
 - All required supplementary documents
 - Formatted according to agency requirements
+- Compliance checklist passed with no unresolved hard-fail items
 
 ### Phase 5: Submission (1 week before deadline)
 
@@ -924,13 +973,11 @@ This skill includes comprehensive reference files covering specific aspects of g
 - `references/nih_guidelines.md`: NIH mechanisms, review criteria, and submission requirements
 - `references/doe_guidelines.md`: DOE programs, emphasis areas, and application procedures
 - `references/darpa_guidelines.md`: DARPA BAAs, program offices, and proposal strategies
+- `references/nstc_guidelines.md`: Taiwan NSTC proposal requirements and review logic
+- `references/gacr_guidelines.md`: Generic Czech Science Foundation (GACR) track
+- `references/gacr_std_2027_guidelines.md`: GACR Standard Projects 2027 call profile
 - `references/broader_impacts.md`: Strategies for compelling broader impacts statements
 - `references/specific_aims_guide.md`: Writing effective specific aims pages
-- `references/budget_preparation.md`: Budget development and justification
-- `references/review_criteria.md`: Detailed review criteria by agency
-- `references/timeline_planning.md`: Creating realistic timelines and milestones
-- `references/team_building.md`: Assembling and presenting effective teams
-- `references/resubmission_strategies.md`: Responding to reviews and revising proposals
 
 Load these references as needed when working on specific aspects of grant writing.
 
@@ -938,18 +985,15 @@ Load these references as needed when working on specific aspects of grant writin
 
 - `assets/nsf_project_summary_template.md`: NSF project summary structure
 - `assets/nih_specific_aims_template.md`: NIH specific aims page template
-- `assets/timeline_gantt_template.md`: Timeline and Gantt chart examples
 - `assets/budget_justification_template.md`: Budget justification structure
-- `assets/biosketch_templates/`: Agency-specific biosketch formats
+- `assets/gacr_c1_template.md`: C1 template for GACR STD 2027
+- `assets/gacr_d1_template.md`: D1 CV template for GACR STD 2027
+- `assets/gacr_std_2027_pre_submission_checklist.md`: Hard compliance checklist for GACR STD 2027
 
 ## Scripts and Tools
 
-- `scripts/compliance_checker.py`: Verify formatting requirements
-- `scripts/budget_calculator.py`: Calculate budgets with inflation and fringe
-- `scripts/deadline_tracker.py`: Track submission deadlines and milestones
+No built-in scripts are bundled in this skill directory at this time.
 
 ---
 
 **Final Note**: Grant writing is both an art and a science. Success requires not only excellent research ideas but also clear communication, strategic positioning, and meticulous attention to detail. Start early, seek feedback, and remember that even the best researchers face rejection—persistence and revision are key to funding success.
-
-
